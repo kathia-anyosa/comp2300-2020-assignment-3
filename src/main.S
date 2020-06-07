@@ -2,6 +2,7 @@
 .global main
 .include "libcomp2300/macros.S"
 
+@COMP2300 Assignment 3 Part 1 - Implementing the P2300 communication protocol
 
 .type main, %function
 main:
