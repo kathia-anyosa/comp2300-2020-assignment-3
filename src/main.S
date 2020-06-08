@@ -38,8 +38,8 @@ main:
   GPIOx_ODR_clear E, 15
 
   @SENDER - implement timer
-  mov r0, 10000000 @clock divisor (prescaler + 1)
-  mov r1, 2000000 @count
+  mov r0, 1000 @clock divisor (prescaler + 1)
+  mov r1, 2000 @count
   bl tim7_init
 
   @RECEIVER - implement waveform
@@ -47,22 +47,13 @@ main:
     bl wave_play_next_sample @play the next sample of the currently set wave
     b play_sound @loop back to continue playing sound
 
-  nop
   b main
 .size main, .-main
-@use wave_change somewhere to change frequency
-@ r0: frequency
-@ r1: amplitude (lower 16-bit as signed)
 
-@interrupt handler functions - declare and make globally visible
-  @must follow proper calling conventions: r4-r11 are 
-  @saved and restored at the start and end of the handler
-  @must clear pending registers before it exits - use EXTI_PR_clear_pending
-
-@note on/off line interrupt handler
+@note on/off line interrupt handler function
 .type EXTI0_IRQHandler, %function
 EXTI0_IRQHandler: 
-  push {lr, r4-r11}
+  push {r4-r11, lr}
   mov r4, 0x7fff @temp variable holding amplitude
   GPIOx_IDR_read D, 0 @read value to get voltage value (rise or fall)
   beq silence @if zero, play silence
@@ -76,47 +67,47 @@ EXTI0_IRQHandler:
     bl wave_change @change waveform so that its amplitude is either zero or 0x7fff
 
   EXTI_PR_clear_pending 0 @clear pending register
-  pop {lr, r4-r11}
+  pop {r4-r11, lr}
   bx lr
-.size EXTI0_IRQHandler, .-main
+.size EXTI0_IRQHandler, .-EXTI0_IRQHandler
 
-@pitch change line interrupt handler
+@pitch change line interrupt handler function
 .type EXTI3_IRQHandler, %function
 EXTI3_IRQHandler: 
-push {lr, r4-r11}
+  push {r4-r11, lr}
 
-ldr r4, =index @load index memory address
-ldr r5, [r4] @load current index into r5
-mov r6, #28 @set maximum index in frequency array
-subs r7, r6, r5 @substract them to see if Z=0
-beq reset
-bne increase
+  ldr r4, =index @load index memory address
+  ldr r5, [r4] @load current index into r5
+  mov r6, #28 @set maximum index in frequency array
+  subs r7, r6, r5 @substract them to see if Z=0
+  beq reset_index
+  bne increase
 
-reset:
-  mov r5, #0 @reset index to zero
+  reset_index:
+    mov r5, #0 @set index to zero
 
-increase: 
-  add r5, r5, #4 @updated index in r6
+  increase: 
+    add r5, r5, #4 @updated index in r6
 
-mov r0, r5 @move temp variable to parameter r0
-ldr r8, =frequencies
-ldr r9, [r8, r5] @get new frequency from table
-mov r10, 0x7fff @change depending on current note on/off
-GPIOx_IDR_read D, 0 @what is the current amplitude
-beq amplitude_zero
-bne change_frequency
+  mov r0, r5 @move temp variable to parameter r0
+  ldr r8, =frequency
+  ldr r9, [r8, r5] @get new frequency from table
+  mov r10, 0x7fff @change depending on current note on/off
+  GPIOx_IDR_read D, 0 @what is the current amplitude
+  beq reset_amplitude
+  bne change_frequency
 
-amplitude_zero:
-  mov r10, #0 @set amplitude to zero
+  reset_amplitude:
+    mov r10, #0 @set amplitude to zero
 
-change_frequency:
-  mov r1, r10 @move temp variable to parameter r1
-  bl wave_change
+  change_frequency:
+    mov r1, r10 @move temp variable to parameter r1
+    bl wave_change
 
-EXTI_PR_clear_pending 3 @clear pending register
-pop {lr, r4-r11}
-bx lr
-.size EXTI3_IRQHandler, .-main
+  EXTI_PR_clear_pending 3 @clear pending register
+  pop {r4-r11, lr}
+  bx lr
+.size EXTI3_IRQHandler, .-EXTI3_IRQHandler
 
 .data
 .align 2 @ align memory addresses to a word boundry (leave here)
