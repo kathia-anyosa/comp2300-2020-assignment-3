@@ -103,19 +103,58 @@ tim7_init:
 @ --parameters--
 @ none
 TIM7_IRQHandler:
-  push {lr}
-
+  push {r4-r11, lr}
   @ Your interrupt handler code goes here
+  GPIOx_ODR_toggle E, 14 @note off
+  ldr r5, =counter
+  ldr r6, [r5]
+  mov r7, #10 
+  cmp r7, r6
+  bls part_one @while counter <= 10
+  bgt toggle_7x
 
-  
-  @ Clear interrupt (Section 29.4.4)
-  ldr r0, =ADR_TIM7
-  ldr r1, =OFS_TIMx_SR
-  mov r2, 0
-  bl clear_bit
+  part_one:
+    tst r6, #1 @check if counter is odd
+    beq toggle_10x @if odd, toggle 10 times
+    bne toggle_7x @if even, toggle 7 times
 
-  bl sync
-  
-  pop {lr}
-  bx lr
+  toggle_10x: @increase pitch index by 10
+    GPIOx_ODR_toggle E, 15
+    GPIOx_ODR_toggle E, 15
+    GPIOx_ODR_toggle E, 15
+    GPIOx_ODR_toggle E, 15
+    GPIOx_ODR_toggle E, 15
+    GPIOx_ODR_toggle E, 15
+    GPIOx_ODR_toggle E, 15
+    GPIOx_ODR_toggle E, 15
+    GPIOx_ODR_toggle E, 15
+    GPIOx_ODR_toggle E, 15
+    add r6, #1 @increase counter by one
+    str r6, [r5] @store counter in memory
+    b clear
+
+  toggle_7x: @increase pitch index by 7
+    GPIOx_ODR_toggle E, 15
+    GPIOx_ODR_toggle E, 15
+    GPIOx_ODR_toggle E, 15
+    GPIOx_ODR_toggle E, 15
+    GPIOx_ODR_toggle E, 15
+    GPIOx_ODR_toggle E, 15
+    GPIOx_ODR_toggle E, 15
+    add r6, #1 @increase counter by one
+    str r6, [r5] @store counter in memory
+    b clear
+
+  clear: @ Clear interrupt (Section 29.4.4)
+    ldr r0, =ADR_TIM7
+    ldr r1, =OFS_TIMx_SR
+    mov r2, 0
+    bl clear_bit
+    bl sync
+    pop {r4-r11, lr}
+    bx lr
 .size TIM7_IRQHandler, .-TIM7_IRQHandler
+
+.data
+counter:
+  .word 0

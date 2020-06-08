@@ -75,7 +75,6 @@ EXTI0_IRQHandler:
 .type EXTI3_IRQHandler, %function
 EXTI3_IRQHandler: 
   push {r4-r11, lr}
-
   ldr r4, =index @load index memory address
   ldr r5, [r4] @load current index into r5
   mov r6, #28 @set maximum index in frequency array
@@ -89,9 +88,10 @@ EXTI3_IRQHandler:
   increase: 
     add r5, r5, #4 @updated index in r6
 
-  mov r0, r5 @move temp variable to parameter r0
+  str r5, [r4] @ store index
   ldr r8, =frequency
   ldr r9, [r8, r5] @get new frequency from table
+  mov r0, r9
   mov r10, 0x7fff @change depending on current note on/off
   GPIOx_IDR_read D, 0 @what is the current amplitude
   beq reset_amplitude
