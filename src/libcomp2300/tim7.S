@@ -139,8 +139,7 @@ TIM7_IRQHandler:
     GPIOx_ODR_clear E, 14
     add r9, #1 @increase counter by one
     str r9, [r8] @store sequence counter in memory
-    @here we change the pitch, based on the counter (rename pitch counter)
-    ldr r5, =counter
+    ldr r5, =pitch_counter
     ldr r6, [r5]
     cmp r6, #18 @if counter is higher than 18, reset to 0
     beq restart_pitch_counter
@@ -215,7 +214,7 @@ TIM7_IRQHandler:
 .size TIM7_IRQHandler, .-TIM7_IRQHandler
 
 .data
-counter:
+pitch_counter:
   .word 0
 
 sequence_counter:
