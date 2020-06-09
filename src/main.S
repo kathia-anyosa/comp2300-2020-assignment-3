@@ -38,7 +38,7 @@ main:
   GPIOx_ODR_clear E, 15
 
   @SENDER - implement timer
-  mov r0, 4000 @clock divisor (prescaler + 1)
+  mov r0, 4000 @clock divisor
   mov r1, 5000 @count
   bl tim7_init
 
@@ -64,7 +64,7 @@ EXTI0_IRQHandler:
 
   play:
     mov r1, r4 @move temp variable to parameter r1
-    bl wave_change @change waveform so that its amplitude is either zero or 0x7fff
+    bl wave_change @change waveform accordingly
 
   EXTI_PR_clear_pending 0 @clear pending register
   pop {r4-r11, lr}
