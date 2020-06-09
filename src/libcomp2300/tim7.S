@@ -127,13 +127,13 @@ TIM7_IRQHandler:
     bne toggle_sound_off @if odd, toggle sound off
 
   toggle_sound_on:
-    GPIOx_ODR_set E, 14 @output 1 (trigger rise)
+    GPIOx_ODR_set E, 14 @output 1 (trigger rise in note on/off line)
     add r9, #1 @increase sequence_counter by one
     str r9, [r8] @store sequence_counter in memory
     b clear
 
   toggle_sound_off:
-    GPIOx_ODR_clear E, 14 @output 0 (trigger fall)
+    GPIOx_ODR_clear E, 14 @output 0 (trigger fall in note on/off line)
     add r9, #1 @increase sequence_counter by one
     str r9, [r8] @store sequence_counter in memory
     ldr r5, =pitch_counter @load pitch_counter memory address
@@ -154,10 +154,10 @@ TIM7_IRQHandler:
 
     part_one:
       tst r6, #1 @check if counter is odd
-      beq toggle_10x @if odd, toggle 10 times FIXME
-      bne toggle_7x @if even, toggle 7 times FIXME
+      beq toggle_10x @if even, toggle 10 times
+      bne toggle_7x @if odd, toggle 7 times
 
-    toggle_10x: @increase pitch index by 10 by toggling output 20 times
+    toggle_10x: @toggle output of pitch change line 20 times to trigger 10 rises
       GPIOx_ODR_toggle E, 15
       GPIOx_ODR_toggle E, 15
       GPIOx_ODR_toggle E, 15
@@ -182,7 +182,7 @@ TIM7_IRQHandler:
       str r6, [r5] @store pitch_counter in memory
       b clear
 
-    toggle_7x: @increase pitch index by 7 by toggling output 14 times
+    toggle_7x: @toggle output of pitch change line 14 times to trigger 7 rises
       GPIOx_ODR_toggle E, 15
       GPIOx_ODR_toggle E, 15
       GPIOx_ODR_toggle E, 15
