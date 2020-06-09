@@ -115,77 +115,94 @@ TIM7_IRQHandler:
   push {r4-r11, lr}
   @ Your interrupt handler code goes here
   @set up overall counter that keeps track of where in the note on/off sequence we are
-  @ ldr r8, =overall_counter
-  @ ldr r9, [r8]
-  @ tst r9, #1 @check if overall counter is even or odd
-  @ beq toggle_on
-  @ bne toggle_off
+  ldr r8, =sequence_counter
+  ldr r9, [r8]
+  cmp r9, #38
+  beq reset_sequence
+  bne continue_sequence
 
-  @ toggle_on:
-  GPIOx_ODR_toggle E, 14
-  ldr r5, =counter
-  ldr r6, [r5]
-  cmp r6, #18 @if counter is higher than 18, reset to 0
-  beq restart
-  bne continue
+  reset_sequence:
+    mov r9, #0
 
-  restart:
-    mov r6, #0
+  continue_sequence:
+    tst r9, #1 @check if sequence counter is even or odd
+    beq toggle_sound_on @if odd, sound on
+    bne toggle_sound_off @if even, sound off
 
-  continue:
-    mov r7, #10 
-    cmp r6, r7
-    bls part_one @while counter <= 10
-    bgt toggle_7x
-
-  part_one:
-    tst r6, #1 @check if counter is odd
-    beq toggle_10x @if odd, toggle 10 times
-    bne toggle_7x @if even, toggle 7 times
-
-  toggle_10x: @increase pitch index by 10
-    GPIOx_ODR_toggle E, 15
-    GPIOx_ODR_toggle E, 15
-    GPIOx_ODR_toggle E, 15
-    GPIOx_ODR_toggle E, 15
-    GPIOx_ODR_toggle E, 15
-    GPIOx_ODR_toggle E, 15
-    GPIOx_ODR_toggle E, 15
-    GPIOx_ODR_toggle E, 15
-    GPIOx_ODR_toggle E, 15
-    GPIOx_ODR_toggle E, 15
-    GPIOx_ODR_toggle E, 15
-    GPIOx_ODR_toggle E, 15
-    GPIOx_ODR_toggle E, 15
-    GPIOx_ODR_toggle E, 15
-    GPIOx_ODR_toggle E, 15
-    GPIOx_ODR_toggle E, 15
-    GPIOx_ODR_toggle E, 15
-    GPIOx_ODR_toggle E, 15
-    GPIOx_ODR_toggle E, 15
-    GPIOx_ODR_toggle E, 15
-    add r6, #1 @increase counter by one
-    str r6, [r5] @store counter in memory
+  toggle_sound_on:
+    GPIOx_ODR_set E, 14
+    add r9, #1 @increase counter by one
+    str r9, [r8] @store sequence counter in memory
     b clear
 
-  toggle_7x: @increase pitch index by 7
-    GPIOx_ODR_toggle E, 15
-    GPIOx_ODR_toggle E, 15
-    GPIOx_ODR_toggle E, 15
-    GPIOx_ODR_toggle E, 15
-    GPIOx_ODR_toggle E, 15
-    GPIOx_ODR_toggle E, 15
-    GPIOx_ODR_toggle E, 15
-    GPIOx_ODR_toggle E, 15
-    GPIOx_ODR_toggle E, 15
-    GPIOx_ODR_toggle E, 15
-    GPIOx_ODR_toggle E, 15
-    GPIOx_ODR_toggle E, 15
-    GPIOx_ODR_toggle E, 15
-    GPIOx_ODR_toggle E, 15
-    add r6, #1 @increase counter by one
-    str r6, [r5] @store counter in memory
-    b clear
+  toggle_sound_off:
+    GPIOx_ODR_clear E, 14
+    add r9, #1 @increase counter by one
+    str r9, [r8] @store sequence counter in memory
+    @here we change the pitch, based on the counter (rename pitch counter)
+    ldr r5, =counter
+    ldr r6, [r5]
+    cmp r6, #18 @if counter is higher than 18, reset to 0
+    beq restart_pitch_counter
+    bne continue
+
+    restart_pitch_counter:
+      mov r6, #0
+
+    continue:
+     mov r7, #10 
+      cmp r6, r7
+      bls part_one @while counter <= 10
+      bgt toggle_7x
+
+    part_one:
+      tst r6, #1 @check if counter is odd
+      beq toggle_10x @if odd, toggle 10 times
+      bne toggle_7x @if even, toggle 7 times
+
+    toggle_10x: @increase pitch index by 10
+      GPIOx_ODR_toggle E, 15
+      GPIOx_ODR_toggle E, 15
+      GPIOx_ODR_toggle E, 15
+      GPIOx_ODR_toggle E, 15
+      GPIOx_ODR_toggle E, 15
+      GPIOx_ODR_toggle E, 15
+      GPIOx_ODR_toggle E, 15
+      GPIOx_ODR_toggle E, 15
+      GPIOx_ODR_toggle E, 15
+      GPIOx_ODR_toggle E, 15
+      GPIOx_ODR_toggle E, 15
+      GPIOx_ODR_toggle E, 15
+      GPIOx_ODR_toggle E, 15
+      GPIOx_ODR_toggle E, 15
+      GPIOx_ODR_toggle E, 15
+      GPIOx_ODR_toggle E, 15
+      GPIOx_ODR_toggle E, 15
+      GPIOx_ODR_toggle E, 15
+      GPIOx_ODR_toggle E, 15
+      GPIOx_ODR_toggle E, 15
+      add r6, #1 @increase counter by one
+      str r6, [r5] @store counter in memory
+      b clear
+
+    toggle_7x: @increase pitch index by 7
+      GPIOx_ODR_toggle E, 15
+      GPIOx_ODR_toggle E, 15
+      GPIOx_ODR_toggle E, 15
+      GPIOx_ODR_toggle E, 15
+      GPIOx_ODR_toggle E, 15
+      GPIOx_ODR_toggle E, 15
+      GPIOx_ODR_toggle E, 15
+      GPIOx_ODR_toggle E, 15
+      GPIOx_ODR_toggle E, 15
+      GPIOx_ODR_toggle E, 15
+      GPIOx_ODR_toggle E, 15
+      GPIOx_ODR_toggle E, 15
+      GPIOx_ODR_toggle E, 15
+      GPIOx_ODR_toggle E, 15
+      add r6, #1 @increase counter by one
+      str r6, [r5] @store counter in memory
+      b clear
 
   clear: @ Clear interrupt (Section 29.4.4)
     ldr r0, =ADR_TIM7
@@ -201,5 +218,5 @@ TIM7_IRQHandler:
 counter:
   .word 0
 
-overall_counter:
+sequence_counter:
   .word 0
