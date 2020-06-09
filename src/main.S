@@ -42,8 +42,6 @@ main:
   mov r1, 5000 @count
   bl tim7_init
 
-  GPIOx_ODR_clear E, 14 @starts as silence
-
   @RECEIVER - implement waveform
   play_sound:
     bl wave_play_next_sample @play the next sample of the currently set wave
@@ -56,7 +54,6 @@ main:
 .type EXTI0_IRQHandler, %function
 EXTI0_IRQHandler: 
   push {r4-r11, lr}
-  @store current frequency and mov into r0 before calling wave_change
   ldr r5, =current_index
   ldr r6, [r5]
   ldr r7, =frequency
