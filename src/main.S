@@ -38,8 +38,8 @@ main:
   GPIOx_ODR_clear E, 15
 
   @SENDER - implement timer
-  mov r0, 1000 @clock divisor (prescaler + 1)
-  mov r1, 2000 @count
+  mov r0, 4000 @clock divisor (prescaler + 1)
+  mov r1, 5000 @count
   bl tim7_init
 
   @RECEIVER - implement waveform
@@ -60,7 +60,7 @@ EXTI0_IRQHandler:
   bne play @if one, play sound
 
   silence:
-    mov r4, 0 @set amplitude parameter to zero
+    mov r4, #0 @set amplitude parameter to zero
 
   play:
     mov r1, r4 @move temp variable to parameter r1
@@ -73,38 +73,29 @@ EXTI0_IRQHandler:
 
 @pitch change line interrupt handler function
 .type EXTI3_IRQHandler, %function
-EXTI3_IRQHandler: 
+EXTI3_IRQHandler:
   push {r4-r11, lr}
-  ldr r4, =index @load index memory address
+  ldr r4, =current_index @load index memory address
   ldr r5, [r4] @load current index into r5
   mov r6, #28 @set maximum index in frequency array
-  subs r7, r6, r5 @substract them to see if Z=0
+  cmp r6, r5 @substract them to see if Z=0
   beq reset_index
   bne increase
 
   reset_index:
     mov r5, #0 @set index to zero
 
-  increase: 
-    add r5, r5, #4 @updated index in r6
+  increase:
+    add r5, r5, #4 @updated index in r5
 
   str r5, [r4] @ store index
   ldr r8, =frequency
   ldr r9, [r8, r5] @get new frequency from table
   mov r0, r9
-  mov r10, 0x7fff @change depending on current note on/off
-  GPIOx_IDR_read D, 0 @what is the current amplitude
-  beq reset_amplitude
-  bne change_frequency
-
-  reset_amplitude:
-    mov r10, #0 @set amplitude to zero
-
-  change_frequency:
-    mov r1, r10 @move temp variable to parameter r1
-    bl wave_change
-
-  EXTI_PR_clear_pending 3 @clear pending register
+  mov r1, 0x7fff
+  bl wave_change
+    
+  EXTI_PR_clear_pending 3
   pop {r4-r11, lr}
   bx lr
 .size EXTI3_IRQHandler, .-EXTI3_IRQHandler
@@ -116,5 +107,5 @@ EXTI3_IRQHandler:
 frequency: @all frequencies have been scaled by a factor of 100
   .word 22000, 24694, 26163, 29366, 32963, 36999, 39200, 44000
 
-index: @stores current frequency index
+current_index: @stores current frequency index
   .word 0
