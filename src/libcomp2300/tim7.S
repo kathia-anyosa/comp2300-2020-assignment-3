@@ -95,14 +95,13 @@ tim7_init:
 
   @ r0: position (see table on 11.3 @Disco reference manual)
   @ r1: priority (4 bits, 1111 = lowest priority, 0000 = highest priority)
-  mov r0,  #9
+  mov r0, #9
   mov r1, 0b0000
   bl NVIC_IPR_set_priority
 
   mov r0, #55
   mov r1, 0b1111
   bl NVIC_IPR_set_priority
-
 
   bl sync
   pop {r4-r5, lr}
@@ -115,6 +114,15 @@ tim7_init:
 TIM7_IRQHandler:
   push {r4-r11, lr}
   @ Your interrupt handler code goes here
+  @set up overall counter that keeps track of where in the note on/off sequence we are
+  @ ldr r8, =overall_counter
+  @ ldr r9, [r8]
+  @ tst r9, #1 @check if overall counter is even or odd
+  @ beq toggle_on
+  @ bne toggle_off
+
+  @ toggle_on:
+  GPIOx_ODR_toggle E, 14
   ldr r5, =counter
   ldr r6, [r5]
   cmp r6, #18 @if counter is higher than 18, reset to 0
@@ -146,11 +154,28 @@ TIM7_IRQHandler:
     GPIOx_ODR_toggle E, 15
     GPIOx_ODR_toggle E, 15
     GPIOx_ODR_toggle E, 15
+    GPIOx_ODR_toggle E, 15
+    GPIOx_ODR_toggle E, 15
+    GPIOx_ODR_toggle E, 15
+    GPIOx_ODR_toggle E, 15
+    GPIOx_ODR_toggle E, 15
+    GPIOx_ODR_toggle E, 15
+    GPIOx_ODR_toggle E, 15
+    GPIOx_ODR_toggle E, 15
+    GPIOx_ODR_toggle E, 15
+    GPIOx_ODR_toggle E, 15
     add r6, #1 @increase counter by one
     str r6, [r5] @store counter in memory
     b clear
 
   toggle_7x: @increase pitch index by 7
+    GPIOx_ODR_toggle E, 15
+    GPIOx_ODR_toggle E, 15
+    GPIOx_ODR_toggle E, 15
+    GPIOx_ODR_toggle E, 15
+    GPIOx_ODR_toggle E, 15
+    GPIOx_ODR_toggle E, 15
+    GPIOx_ODR_toggle E, 15
     GPIOx_ODR_toggle E, 15
     GPIOx_ODR_toggle E, 15
     GPIOx_ODR_toggle E, 15

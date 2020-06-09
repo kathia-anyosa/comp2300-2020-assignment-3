@@ -37,10 +37,12 @@ main:
   GPIOx_ODR_clear E, 14
   GPIOx_ODR_clear E, 15
 
-  @SENDER - implement timer
+  @SENDER - implement timer, which is set to interrupt every 0.25 seconds
   mov r0, 4000 @clock divisor
   mov r1, 5000 @count
   bl tim7_init
+
+  GPIOx_ODR_clear E, 14 @starts as silence
 
   @RECEIVER - implement waveform
   play_sound:
@@ -54,6 +56,11 @@ main:
 .type EXTI0_IRQHandler, %function
 EXTI0_IRQHandler: 
   push {r4-r11, lr}
+  @store current frequency and mov into r0 before calling wave_change
+  ldr r5, =current_index
+  ldr r6, [r5]
+  ldr r7, =frequency
+  ldr r8, [r7, r6] @current frequency
   mov r4, 0x7fff @temp variable holding amplitude
   GPIOx_IDR_read D, 0 @read value to get voltage value (rise or fall)
   beq silence @if zero, play silence
@@ -63,6 +70,7 @@ EXTI0_IRQHandler:
     mov r4, #0 @set amplitude parameter to zero
 
   play:
+    mov r0, r8
     mov r1, r4 @move temp variable to parameter r1
     bl wave_change @change waveform accordingly
 
@@ -77,7 +85,7 @@ EXTI3_IRQHandler:
   push {r4-r11, lr}
   ldr r4, =current_index @load index memory address
   ldr r5, [r4] @load current index into r5
-  mov r6, #28 @set maximum index in frequency array
+  mov r6, #32 @set index out of bounds
   cmp r6, r5 @substract them to see if Z=0
   beq reset_index
   bne increase
@@ -86,11 +94,11 @@ EXTI3_IRQHandler:
     mov r5, #0 @set index to zero
 
   increase:
+    ldr r8, =frequency
+    ldr r9, [r8, r5] @get new frequency from table
     add r5, r5, #4 @updated index in r5
-
-  str r5, [r4] @ store index
-  ldr r8, =frequency
-  ldr r9, [r8, r5] @get new frequency from table
+    str r5, [r4] @ store index
+  
   mov r0, r9
   mov r1, 0x7fff
   bl wave_change
